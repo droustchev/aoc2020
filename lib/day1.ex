@@ -19,6 +19,18 @@ defmodule Day1 do
     end
   end
 
+  def part1_rec do
+    check(Enum.to_list(input()))
+  end
+
+  def check([head | tail]) do
+    n = 2020 - head
+    case Enum.member?(tail, n) do
+      true -> IO.puts(head * n)
+        _ -> check(tail)
+    end
+  end
+
   def part2 do
     for l <- input() do
       for m <- input() do
