@@ -35,25 +35,23 @@ defmodule Day8 do
     end
   end
 
-  def compute2(instructions, pos, acc, seen, replaced, max) do
-    {_index, op, dir, offset} = inst = Enum.at(instructions, pos)
-    case Enum.member?(seen, inst) do
-      true -> IO.puts "Current acc: #{acc}"
-      false ->
-        {new_pos, new_acc} = case op do
-          "nop" -> {pos + 1, acc}
-          "acc" ->
-            case dir do
-              "+" -> {pos + 1, acc + offset}
-              "-" -> {pos + 1, acc - offset}
-            end
-          "jmp" ->
-            case dir do
-              "+" -> {pos + offset, acc}
-              "-" -> {pos - offset, acc}
-            end
-        end
-        compute2(instructions, new_pos, new_acc, seen ++ [inst], replaced, max)
+  def compute2(instructions, pos, acc, seen) do
+    if pos != length(instructions) do
+      {_index, op, dir, offset} = inst = Enum.at(instructions, pos)
+      case Enum.member?(seen, inst) do
+        true -> {:crash, acc}
+        false ->
+          {new_pos, new_acc} = case {op, dir} do
+            {"nop", _} -> {pos + 1, acc}
+            {"acc", "+"} -> {pos + 1, acc + offset}
+            {"acc", "-"} -> {pos + 1, acc - offset}
+            {"jmp", "+"} -> {pos + offset, acc}
+            {"jmp", "-"} -> {pos - offset, acc}
+          end
+          compute2(instructions, new_pos, new_acc, seen ++ [inst])
+      end
+    else
+      {:term, acc}
     end
   end
 
@@ -65,7 +63,7 @@ defmodule Day8 do
         {index, "nop", dir, offset} -> List.replace_at(instructions, index, {index, "jmp", dir, offset})
         {index, "jmp", dir, offset} -> List.replace_at(instructions, index, {index, "nop", dir, offset})
       end
-        compute(new_instructions, 0, 0, [])
+        compute2(new_instructions, 0, 0, [])
     end)
   end
 
@@ -74,14 +72,19 @@ defmodule Day8 do
                    |> Enum.map(&parse_inst/1)
                    |> Enum.to_list
 
-    compute(instructions, 0, 0, [])
+    compute2(instructions, 0, 0, [])
+    |> IO.inspect()
   end
 
   def part2 do
     instructions = Enum.with_index(input())
                    |> Enum.map(&parse_inst/1)
                    |> Enum.to_list
+
     compute_all(instructions)
+    |> Enum.reject(fn {res, _acc} -> res == :crash end)
+    |> hd()
+    |> IO.inspect()
   end
 
 end
